@@ -116,3 +116,23 @@ El servidor web estará disponible de inmediato en:
 - **Dirección:** `director`
 - **Administrativo:** `staff`
 - **Profesor:** `profesor`
+
+
+
+### 🔑 Guía de Gestión y Recuperación de Contraseñas 
+
+Con el fin de garantizar la autonomía del personal y la seguridad de la intranet, la plataforma implementa un doble circuito de gestión de credenciales, totalmente monitorizado por el registro de auditoría inmutable:
+
+#### A) Circuito de Recuperación Directiva (Reset Administrativo)
+Diseñado para dar soporte al personal del centro en caso de olvido o pérdida de credenciales.
+1. **Acceso Restringido:** Este módulo solo es visible y ejecutable por usuarios con rol de **SuperAdmin** o **Dirección**.
+2. **Procedimiento:** Desde la pestaña *👥 Gestión de Usuarios*, el administrador puede localizar al empleado afectado y pulsar el botón **Resetear Clave**.
+3. **Efecto Inmediato:** La contraseña del usuario se restablece de inmediato a la clave genérica provisional de la cooperativa: **`rutadelaplata`**.
+4. **Trazabilidad:** La acción se graba automáticamente en los logs inmutables bajo el identificador `RESET_PASSWORD`, registrando quién ejecutó el cambio, sobre qué usuario y desde qué dirección IP.
+
+#### B) Circuito de Autogestión Docente (Cambio de Clave Personal)
+Diseñado para que cualquier usuario (incluidos los profesores) pueda securizar su cuenta tras un reseteo o por mantenimiento periódico.
+1. **Acceso Universal:** El botón **🔑 Cambiar Clave** está disponible en la cabecera superior para todos los usuarios con sesión activa.
+2. **Procedimiento:** El usuario introduce su nueva contraseña privada y la confirma en el formulario emergente (longitud mínima permitida: 4 caracteres).
+3. **Cierre de Sesión Seguro:** Al procesarse el cambio con éxito, el sistema destruye de forma segura la cookie actual y fuerza la redirección al formulario de Login. El usuario deberá iniciar sesión obligatoriamente con su nueva clave privada.
+4. **Trazabilidad:** El sistema añade un registro inmutable `CHANGE_OWN_PASSWORD` para certificar la autoría del cambio sin exponer la privacidad de la nueva contraseña (la cual se almacena firmada criptográficamente mediante un hash de tipo `scrypt`).
