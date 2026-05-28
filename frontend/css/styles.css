@@ -1158,3 +1158,44 @@ footer {
         gap: 15px;
     }
 }
+.social-media-section {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+.social-media-section h3 {
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.social-links {
+    margin-top: 15px;
+}
+
+.social-icon {
+    display: inline-flex;
+    align-items: center;
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.social-icon.facebook {
+    background-color: #1877F2; /* Azul oficial de Facebook */
+    color: white;
+}
+
+.social-icon.facebook i {
+    margin-right: 10px;
+    font-size: 1.2rem;
+}
+
+/* Efecto Hover */
+.social-icon.facebook:hover {
+    background-color: #145dbf;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
