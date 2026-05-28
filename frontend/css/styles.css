@@ -186,9 +186,11 @@ header {
     gap: 12px;
 }
 
+/* Corrección para que el escudo vertical no se deforme */
 .logo-img {
-    height: 48px;
-    width: auto;
+    height: 50px;          /* Ajusta la altura que quieras que tenga en la cabecera */
+    width: auto;           /* ¡La clave! Hace que el ancho se calcule proporcionalmente y no se aplaste */
+    object-fit: contain;   /* Protege la imagen para que mantenga sus proporciones originales */
 }
 
 .logo-text {
