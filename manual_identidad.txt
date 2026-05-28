@@ -1,0 +1,33 @@
+=== SLIDE 1 ===
+Alegreya Sans
+F1F0E9
+41644A
+41644A
+41644A
+Montserrat
+
+=== SLIDE 2 ===
+Alegreya Sans
+4379F2
+FFEB00
+6EC207
+117554
+Montserrat
+
+=== SLIDE 3 ===
+Alegreya Sans
+FFFFFF
+1D7A85
+191919
+AEAEAF
+Montserrat
+
+=== SLIDE 4 ===
+Alegreya Sans
+FFFFFF
+E21916
+191919
+AEAEAF
+Montserrat
+3C6348
+

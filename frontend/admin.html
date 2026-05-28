@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Panel de Administración - Colegio Ruta de la Plata</title>
+    
+    <!-- Design System CSS Stylesheet -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="admin-body">
+
+    <!-- 1. LOGIN CONTAINER (Visible when not authenticated) -->
+    <div class="login-container" id="login-container">
+        <div class="login-card">
+            <div class="login-card-header">
+                <img src="assets/escudo.jpg" alt="Escudo Colegio" style="height: 64px; margin-bottom: 15px;">
+                <h2>Acceso Intranet</h2>
+                <p>Colegio Ruta de la Plata - Santa Olalla del Cala</p>
+            </div>
+            
+            <div id="login-alert" class="alert alert-danger" style="display: none;"></div>
+            
+            <form id="admin-login-form">
+                <div class="form-group">
+                    <label for="username">Usuario</label>
+                    <input type="text" id="username" class="form-control" placeholder="Ingrese su usuario" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label for="password">Contraseña</label>
+                    <input type="password" id="password" class="form-control" placeholder="Ingrese su contraseña" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Iniciar Sesión</button>
+            </form>
+            <div style="text-align: center; margin-top: 20px;">
+                <a href="/" style="font-size: 0.9rem; color: var(--primary);">&larr; Volver a la web pública</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. ADMIN PORTAL LAYOUT (Visible when authenticated) -->
+    <div id="admin-portal" style="display: none; flex-direction: column; min-height: 100vh;">
+        <!-- Admin Header -->
+        <header class="admin-header">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <a href="/"><img src="assets/escudo.jpg" alt="Escudo" style="height: 35px;"></a>
+                <h1>Intranet Ruta de la Plata</h1>
+            </div>
+            <div class="admin-nav-info">
+                <span>Hola, <strong id="admin-username">Usuario</strong></span>
+                <span class="admin-role-badge" id="admin-role">Rol</span>
+                <button id="logout-btn" class="btn btn-secondary" style="padding: 6px 14px; font-size: 0.8rem; border-color: rgba(255,255,255,0.3); color: var(--white);">
+                    Cerrar Sesión
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Workspace -->
+        <div class="admin-layout">
+            <!-- Sidebar Navigation Tabs -->
+            <aside class="admin-sidebar">
+                <ul class="admin-menu">
+                    <li class="active" data-target="news-section"><a href="#">📰 Noticias</a></li>
+                    <li data-target="menu-section"><a href="#">🍽️ Menú Comedor</a></li>
+                    <li data-target="docs-section"><a href="#">📄 Documentos</a></li>
+                    <li data-target="contacts-section"><a href="#">📩 Solicitudes Familias</a></li>
+                    <li data-target="logs-section" id="logs-menu-item" style="display: none;"><a href="#">📜 Registros de Log</a></li>
+                </ul>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="admin-content">
+                <div id="admin-action-alert" class="alert" style="display: none; margin-bottom: 25px;"></div>
+
+                <!-- SECTION A: NEWS CRUD -->
+                <div id="news-section" class="admin-section active">
+                    <div class="admin-section-header">
+                        <h2>Gestión de Noticias</h2>
+                        <button class="btn btn-primary" onclick="openContentModal('news')">➕ Publicar Noticia</button>
+                    </div>
+                    
+                    <div class="admin-card table-responsive">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Título</th>
+                                    <th>Autor</th>
+                                    <th>Fecha Creación</th>
+                                    <th>Último Cambio</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="news-table-body">
+                                <!-- Loaded dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- SECTION B: MENU COMEDOR -->
+                <div id="menu-section" class="admin-section">
+                    <div class="admin-section-header">
+                        <h2>Menú del Comedor Escolar</h2>
+                    </div>
+                    
+                    <div class="admin-card" style="max-width: 600px;">
+                        <h3>Actualizar Menú PDF</h3>
+                        <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 20px;">
+                            Sube el archivo PDF del menú mensual. Esto actualizará inmediatamente el botón de descarga de la web pública.
+                        </p>
+                        
+                        <form id="menu-upload-form" enctype="multipart/form-data">
+                            <div class="form-group">
+                                <label for="menu-title">Título del Menú (Ej. Menú Mayo 2026)</label>
+                                <input type="text" id="menu-title" class="form-control" placeholder="Ej. Menú Escolar Mayo 2026" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="menu-file">Archivo PDF</label>
+                                <input type="file" id="menu-file" class="form-control" accept=".pdf" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Subir y Publicar Menú</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- SECTION C: DOCUMENTS CRUD -->
+                <div id="docs-section" class="admin-section">
+                    <div class="admin-section-header">
+                        <h2>Documentos Oficiales</h2>
+                        <button class="btn btn-primary" id="add-doc-btn" onclick="openContentModal('document')">➕ Añadir Documento</button>
+                    </div>
+                    
+                    <div class="admin-card table-responsive">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Nombre del Documento</th>
+                                    <th>Descripción</th>
+                                    <th>Archivo PDF</th>
+                                    <th>Último Cambio</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="docs-table-body">
+                                <!-- Loaded dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- SECTION D: CONTACT MESSAGES INBOX -->
+                <div id="contacts-section" class="admin-section">
+                    <div class="admin-section-header">
+                        <h2>Solicitudes de Nuevas Familias</h2>
+                    </div>
+                    
+                    <div class="admin-card table-responsive">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Nombre</th>
+                                    <th>Contacto</th>
+                                    <th>Mensaje / Consulta</th>
+                                </tr>
+                            </thead>
+                            <tbody id="contacts-table-body">
+                                <!-- Loaded dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- SECTION E: IMMUTABLE AUDIT LOGS (SuperAdmin and Dirección Only) -->
+                <div id="logs-section" class="admin-section">
+                    <div class="admin-section-header">
+                        <h2>Registro de Modificaciones (Auditoría Inmutable)</h2>
+                        <span class="admin-role-badge" style="background-color: var(--accent-red)">Solo Lectura</span>
+                    </div>
+                    <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 20px; max-width: 800px;">
+                        Historial cronológico completo de acciones administrativas. Este registro es inmutable desde la aplicación para cumplir con las directrices de seguridad.
+                    </p>
+                    
+                    <div class="admin-card table-responsive">
+                        <table class="admin-table" style="font-size: 0.9rem;">
+                            <thead>
+                                <tr>
+                                    <th>Fecha/Hora</th>
+                                    <th>Usuario</th>
+                                    <th>Acción</th>
+                                    <th>Detalles</th>
+                                    <th>IP Cliente</th>
+                                </tr>
+                            </thead>
+                            <tbody id="logs-table-body">
+                                <!-- Loaded dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- 3. CONTENT CRUD MODAL (News / Documents) -->
+    <div class="modal" id="content-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Publicar Contenido</h3>
+                <button class="modal-close" onclick="closeContentModal()">&times;</button>
+            </div>
+            
+            <form id="content-form" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <!-- Hidden fields -->
+                    <input type="hidden" id="content-id">
+                    <input type="hidden" id="content-type">
+                    
+                    <div class="form-group">
+                        <label for="content-title">Título</label>
+                        <input type="text" id="content-title" class="form-control" required placeholder="Escribe el título...">
+                    </div>
+                    
+                    <div class="form-group" id="body-group">
+                        <label for="content-body">Contenido / Descripción</label>
+                        <textarea id="content-body" class="form-control" placeholder="Escribe el contenido descriptivo..."></textarea>
+                    </div>
+                    
+                    <div class="form-group" id="file-group">
+                        <label for="content-file">Archivo Adjunto (Opcional para Noticias, Recomendado para Documentos PDF)</label>
+                        <input type="file" id="content-file" class="form-control" accept=".pdf,.png,.jpg,.jpeg">
+                        <span id="current-file-label" style="font-size: 0.85rem; display: block; color: var(--text-muted); margin-top: 5px;"></span>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeContentModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="modal-submit-btn">Guardar Contenido</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin Logic JavaScript -->
+    <script src="js/admin.js"></script>
+</body>
+</html>
