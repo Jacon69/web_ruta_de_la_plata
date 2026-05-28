@@ -222,6 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function enforceRoleUI(role) {
         const logsMenu = document.getElementById('logs-menu-item');
+        const usersMenu = document.getElementById('users-menu-item'); // Integración pestaña usuarios
         const addDocBtn = document.getElementById('add-doc-btn');
         const menuTab = document.querySelector('[data-target="menu-section"]');
         const docsTab = document.querySelector('[data-target="docs-section"]');
@@ -230,8 +231,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // SuperAdmin / Dirección see everything
         if (role === 'SuperAdmin' || role === 'Dirección') {
             if (logsMenu) logsMenu.style.display = 'block';
+            if (usersMenu) usersMenu.style.display = 'block'; // Mostrar a roles directivos
         } else {
             if (logsMenu) logsMenu.style.display = 'none';
+            if (usersMenu) usersMenu.style.display = 'none'; // Ocultar al resto
         }
         
         // Teachers (Profesor) can ONLY manage news
@@ -254,7 +257,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 loadNews();
                 break;
             case 'menu-section':
-                // Menu displays form, optionally load current menu name
                 fetch('/api/menu')
                     .then(res => res.json())
                     .then(menu => {
@@ -269,6 +271,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 break;
             case 'logs-section':
                 loadLogs();
+                break;
+            case 'users-section': // Enrutado de datos para la pestaña de usuarios
+                loadUsers();
                 break;
         }
     }
@@ -295,7 +300,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 news.forEach(item => {
                     const row = document.createElement('tr');
                     
-                    // Show or hide actions based on role: Teachers can edit but not delete; Admin/Directors can do both.
                     let actionsHtml = `<button class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.8rem;" onclick="editContent(${item.id})">Editar</button>`;
                     if (currentUser && currentUser.role !== 'Profesor') {
                         actionsHtml += ` <button class="btn btn-danger" style="padding: 5px 10px; font-size: 0.8rem;" onclick="deleteContent(${item.id})">Eliminar</button>`;
@@ -382,7 +386,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     }
 
-    // Load Immutable Activity Logs (SuperAdmin / Dirección only)
+    // Load Immutable Activity Logs
     function loadLogs() {
         const tbody = document.getElementById('logs-table-body');
         if (!tbody) return;
@@ -403,7 +407,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 logs.forEach(log => {
                     const row = document.createElement('tr');
-                    // Styling actions for easy scanning
                     let actionStyle = 'font-weight:600;';
                     if (log.action.includes('DELETE')) actionStyle += 'color:var(--accent-red);';
                     if (log.action.includes('CREATE')) actionStyle += 'color:var(--primary);';
@@ -424,6 +427,110 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     }
 
+    // --- MÓDULO DE CONTROL DE USUARIOS (RECOVERY PANELS) ---
+
+    function loadUsers() {
+        const tbody = document.getElementById('users-table-body');
+        if (!tbody) return;
+        
+        tbody.innerHTML = '';
+        const usuariosDelColegio = [
+            { id: 1, username: 'admin', role: 'SuperAdmin', label: 'Super Administrador' },
+            { id: 2, username: 'director', role: 'Dirección', label: 'Dirección de Centro' },
+            { id: 3, username: 'staff', role: 'Administrativo', label: 'Personal Administrativo' },
+            { id: 4, username: 'profesor', role: 'Profesor', label: 'Cuerpo Docente / Profesor' }
+        ];
+        
+        usuariosDelColegio.forEach(user => {
+            const row = document.createElement('tr');
+            let badgeColor = 'var(--primary)';
+            if (user.role === 'SuperAdmin') badgeColor = 'var(--accent-red)';
+            if (user.role === 'Dirección') badgeColor = 'var(--accent-teal)';
+            if (user.role === 'Profesor') badgeColor = 'var(--accent-blue)';
+
+            row.innerHTML = `
+                <td><code>#${user.id}</code></td>
+                <td><strong>${escapeHtml(user.username)}</strong></td>
+                <td><span class="admin-role-badge" style="background-color: ${badgeColor}; color: var(--white);">${user.label}</span></td>
+                <td>
+                    <button class="btn btn-danger" style="padding: 5px 12px; font-size: 0.8rem; background-color: var(--accent-red); border: none;" 
+                        onclick="resetearContrasena(${user.id}, '${escapeHtml(user.username)}')">
+                        🔄 Resetear Clave
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    window.resetearContrasena = function(usuarioId, username) {
+        const confirmar = confirm(`¿Estás seguro de que deseas restablecer la contraseña de "${username}" a la por defecto ("rutadelaplata")?`);
+        if (!confirmar) return;
+
+        fetch('/api/admin/reset-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ usuario_id: usuarioId })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                alert(`Error: ${data.error}`);
+            } else {
+                alert(data.success || "Contraseña restablecida correctamente.");
+            }
+        })
+        .catch(err => {
+            alert(`Error de comunicación con el servidor: ${err.message}`);
+        });
+    };
+
+    // --- LÓGICA DE CAMBIO DE CONTRASEÑA PROPIA (TODOS LOS ROLES) ---
+
+    window.abrirModalPassword = function() {
+        const modal = document.getElementById('password-modal');
+        document.getElementById('personal-password-form').reset();
+        if (modal) modal.classList.add('active');
+    };
+
+    window.cerrarModalPassword = function() {
+        const modal = document.getElementById('password-modal');
+        if (modal) modal.classList.remove('active');
+    };
+
+    const passwordForm = document.getElementById('personal-password-form');
+    if (passwordForm) {
+        passwordForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const newPwd = document.getElementById('new-password').value;
+            const confirmPwd = document.getElementById('confirm-password').value;
+            
+            if (newPwd !== confirmPwd) {
+                alert("Las contraseñas introducidas no coinciden. Inténtalo de nuevo.");
+                return;
+            }
+            
+            fetch('/api/auth/change-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: newPwd })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) {
+                    alert(`Error: ${data.error}`);
+                } else {
+                    alert("¡Éxito! Tu contraseña ha sido modificada. Por seguridad, se va a reiniciar la sesión.");
+                    fetch('/api/auth/logout', { method: 'POST' }).then(() => location.reload());
+                }
+            })
+            .catch(err => {
+                alert(`Error al procesar el cambio: ${err.message}`);
+            });
+        });
+    }
+
     // --- CRUD Actions triggers ---
 
     window.openContentModal = function(type) {
@@ -437,7 +544,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         document.getElementById('modal-title').textContent = type === 'news' ? 'Publicar Nueva Noticia' : 'Añadir Documento Oficial';
         
-        // Customize form labels/displays based on type
         const bodyGroup = document.getElementById('body-group');
         const fileInput = document.getElementById('content-file');
         
@@ -446,7 +552,7 @@ document.addEventListener('DOMContentLoaded', () => {
             fileInput.required = false;
         } else {
             bodyGroup.querySelector('label').textContent = 'Descripción del Documento';
-            fileInput.required = true; // file is required for new documents
+            fileInput.required = true;
         }
         
         modal.classList.add('active');
@@ -472,7 +578,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const bodyGroup = document.getElementById('body-group');
         const fileInput = document.getElementById('content-file');
         
-        fileInput.required = false; // file is optional on edit
+        fileInput.required = false;
         
         if (item.type === 'news') {
             bodyGroup.querySelector('label').textContent = 'Cuerpo de la Noticia';
@@ -523,7 +629,6 @@ document.addEventListener('DOMContentLoaded', () => {
         alertDiv.textContent = message;
         alertDiv.style.display = 'block';
         
-        // Hide after 5 seconds
         setTimeout(() => {
             alertDiv.style.display = 'none';
         }, 5000);
@@ -532,7 +637,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function formatDate(dateStr) {
         if (!dateStr) return '';
         const d = new Date(dateStr);
-        // Format to YYYY-MM-DD HH:MM
         const year = d.getFullYear();
         const month = String(d.getMonth() + 1).padStart(2, '0');
         const day = String(d.getDate()).padStart(2, '0');

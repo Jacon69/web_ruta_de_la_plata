@@ -1,4 +1,11 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // 0. Dynamic Admissions Year Update
+    const admissionsBtn = document.getElementById('admissions-btn');
+    if (admissionsBtn) {
+        const currentYear = new Date().getFullYear();
+        admissionsBtn.textContent = `Admisiones ${currentYear}/${currentYear + 1}`;
+    }
+
     // 1. Mobile Menu Toggle
     const hamburger = document.getElementById('hamburger');
     const navbar = document.getElementById('navbar');

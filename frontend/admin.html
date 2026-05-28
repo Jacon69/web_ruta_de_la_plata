@@ -15,7 +15,7 @@
     <div class="login-container" id="login-container">
         <div class="login-card">
             <div class="login-card-header">
-                <img src="assets/escudo.jpg" alt="Escudo Colegio" style="height: 64px; margin-bottom: 15px;">
+                <img src="assets/logo-colegio.png" alt="Logotipo Colegio" style="height: 64px; margin-bottom: 15px;">
                 <h2>Acceso Intranet</h2>
                 <p>Colegio Ruta de la Plata - Santa Olalla del Cala</p>
             </div>
@@ -44,12 +44,18 @@
         <!-- Admin Header -->
         <header class="admin-header">
             <div style="display: flex; align-items: center; gap: 15px;">
-                <a href="/"><img src="assets/escudo.jpg" alt="Escudo" style="height: 35px;"></a>
+                <a href="/"><img src="assets/logo-colegio.png" alt="Logotipo" style="height: 35px;"></a>
                 <h1>Intranet Ruta de la Plata</h1>
             </div>
             <div class="admin-nav-info">
                 <span>Hola, <strong id="admin-username">Usuario</strong></span>
                 <span class="admin-role-badge" id="admin-role">Rol</span>
+                
+                <!-- NUEVO BOTÓN DE CAMBIO DE CLAVE PROPIA -->
+                <button onclick="abrirModalPassword()" class="btn btn-secondary" style="padding: 6px 14px; font-size: 0.8rem; border-color: rgba(255,255,255,0.3); color: var(--white); margin-right: 5px;">
+                    🔑 Cambiar Clave
+                </button>
+                
                 <button id="logout-btn" class="btn btn-secondary" style="padding: 6px 14px; font-size: 0.8rem; border-color: rgba(255,255,255,0.3); color: var(--white);">
                     Cerrar Sesión
                 </button>
@@ -65,6 +71,7 @@
                     <li data-target="menu-section"><a href="#">🍽️ Menú Comedor</a></li>
                     <li data-target="docs-section"><a href="#">📄 Documentos</a></li>
                     <li data-target="contacts-section"><a href="#">📩 Solicitudes Familias</a></li>
+                    <li data-target="users-section" id="users-menu-item" style="display: none;"><a href="#">👥 Gestión de Usuarios</a></li>
                     <li data-target="logs-section" id="logs-menu-item" style="display: none;"><a href="#">📜 Registros de Log</a></li>
                 </ul>
             </aside>
@@ -172,6 +179,33 @@
                     </div>
                 </div>
 
+                <!-- SECTION F: USERS MANAGEMENT -->
+                <div id="users-section" class="admin-section">
+                    <div class="admin-section-header">
+                        <h2>Gestión de Usuarios e Intranet</h2>
+                        <span class="admin-role-badge" style="background-color: var(--primary)">Control de Accesos</span>
+                    </div>
+                    <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 20px;">
+                        Listado de personal del centro con acceso a la plataforma. Puedes restablecer los accesos olvidados a la contraseña genérica de la cooperativa en caso de incidencia.
+                    </p>
+                    
+                    <div class="admin-card table-responsive">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nombre de Usuario</th>
+                                    <th>Rol Asignado</th>
+                                    <th>Acciones de Recuperación</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-table-body">
+                                <!-- Loaded dynamically via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <!-- SECTION E: IMMUTABLE AUDIT LOGS (SuperAdmin and Dirección Only) -->
                 <div id="logs-section" class="admin-section">
                     <div class="admin-section-header">
@@ -237,6 +271,32 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" onclick="closeContentModal()">Cancelar</button>
                     <button type="submit" class="btn btn-primary" id="modal-submit-btn">Guardar Contenido</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- NUEVO MODAL PARA CAMBIO DE CONTRASEÑA PERSONAL -->
+    <div class="modal" id="password-modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3>Cambiar Mi Contraseña</h3>
+                <button class="modal-close" onclick="cerrarModalPassword()">&times;</button>
+            </div>
+            <form id="personal-password-form">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="new-password">Nueva Contraseña</label>
+                        <input type="password" id="new-password" class="form-control" required placeholder="Mínimo 4 caracteres...">
+                    </div>
+                    <div class="form-group">
+                        <label for="confirm-password">Confirmar Nueva Contraseña</label>
+                        <input type="password" id="confirm-password" class="form-control" required placeholder="Repite la contraseña...">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="cerrarModalPassword()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Actualizar Contraseña</button>
                 </div>
             </form>
         </div>

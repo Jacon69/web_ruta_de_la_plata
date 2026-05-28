@@ -150,6 +150,76 @@ def api_session():
         return jsonify({'logged_in': True, 'user': session['user']})
     return jsonify({'logged_in': False})
 
+@app.route('/api/auth/change-password', methods=['POST'])
+@login_required
+def api_change_password():
+    """Permite a cualquier usuario logueado cambiar su propia contraseña."""
+    user = session['user']
+    data = request.get_json()
+    
+    nueva_pwd = data.get('password')
+    if not nueva_pwd or len(nueva_pwd) < 4:
+        return jsonify({'error': 'La contraseña introducida no es válida.'}), 400
+        
+    from werkzeug.security import generate_password_hash
+    nuevo_hash = generate_password_hash(nueva_pwd)
+    
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("UPDATE users SET password_hash = ? WHERE id = ?", (nuevo_hash, user['id']))
+        conn.commit()
+        conn.close()
+        
+        log_action(user['id'], user['username'], 'CHANGE_OWN_PASSWORD', 'El usuario actualizó su contraseña personal de acceso.', request.remote_addr)
+        return jsonify({'success': 'Tu contraseña ha sido actualizada correctamente.'}), 200
+    except Exception as e:
+        return jsonify({'error': f'Error al guardar en la base de datos: {str(e)}'}), 500
+
+# ----------------- RECOVERY & RESET API -----------------
+
+@app.route('/api/admin/reset-password', methods=['POST'])
+@login_required
+@require_roles('SuperAdmin', 'Dirección')
+def api_admin_reset_password():
+    """Restablece la contraseña de un usuario concreto a la clave por defecto."""
+    user_executing = session['user']
+    data = request.get_json()
+    
+    if not data or not data.get('usuario_id'):
+        return jsonify({'error': 'El ID del usuario es obligatorio.'}), 400
+        
+    usuario_id = data['usuario_id']
+    from werkzeug.security import generate_password_hash
+    contrasena_defecto = "rutadelaplata"
+    nuevo_hash = generate_password_hash(contrasena_defecto)
+    
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT username FROM users WHERE id = ?", (usuario_id,))
+        target_user = cursor.fetchone()
+        
+        if not target_user:
+            conn.close()
+            return jsonify({'error': 'Usuario no encontrado.'}), 404
+            
+        username_afectado = target_user['username']
+        cursor.execute("UPDATE users SET password_hash = ? WHERE id = ?", (nuevo_hash, usuario_id))
+        conn.commit()
+        conn.close()
+        
+        log_action(
+            user_executing['id'], 
+            user_executing['username'], 
+            'RESET_PASSWORD', 
+            f"Restableció la contraseña del usuario {username_afectado} (ID: {usuario_id}) a la de por defecto.", 
+            request.remote_addr
+        )
+        return jsonify({'success': f'Contraseña de {username_afectado} restablecida correctamente a "{contrasena_defecto}".'}), 200
+    except Exception as e:
+        return jsonify({'error': f'Error interno en la base de datos: {str(e)}'}), 500
+
 # ----------------- BACKOFFICE ADMIN API -----------------
 
 @app.route('/api/admin/logs', methods=['GET'])
@@ -199,8 +269,6 @@ def api_admin_create_content():
     title = request.form.get('title')
     body = request.form.get('body', '')
     
-    # 1. Enforce Role Permissions
-    # Profesor can ONLY publish 'news'
     if user['role'] == 'Profesor' and c_type != 'news':
         return jsonify({'error': 'Unauthorized. Teachers can only create news articles.'}), 403
         
@@ -212,9 +280,7 @@ def api_admin_create_content():
         file = request.files['file']
         if file and file.filename != '' and allowed_file(file.filename):
             filename = secure_filename(file.filename)
-            # Add unique prefix or save
             os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-            # Prepend id-like string to avoid overwrites
             import time
             unique_filename = f"{int(time.time())}_{filename}"
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], unique_filename))
@@ -223,9 +289,7 @@ def api_admin_create_content():
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # Special rule: If uploading a 'menu', we either update the existing one or create it.
     if c_type == 'menu':
-        # Check if menu already exists
         cursor.execute("SELECT id, file_path FROM contents WHERE type = 'menu'")
         existing_menu = cursor.fetchone()
         if existing_menu:
@@ -252,7 +316,6 @@ def api_admin_create_content():
         
     conn.commit()
     conn.close()
-    
     return jsonify({'success': 'Content created successfully', 'content_id': content_id})
 
 @app.route('/api/admin/contents/<int:content_id>', methods=['PUT'])
@@ -264,7 +327,6 @@ def api_admin_update_content(content_id):
     title = request.form.get('title')
     body = request.form.get('body', '')
     
-    # Check permissions
     if user['role'] == 'Profesor' and c_type != 'news':
         return jsonify({'error': 'Unauthorized. Teachers can only edit news articles.'}), 403
         
@@ -273,15 +335,12 @@ def api_admin_update_content(content_id):
         
     conn = get_db_connection()
     cursor = conn.cursor()
-    
-    # Check that this content exists
     cursor.execute("SELECT id, type, file_path FROM contents WHERE id = ?", (content_id,))
     content_item = cursor.fetchone()
     if not content_item:
         conn.close()
         return jsonify({'error': 'Content not found.'}), 404
         
-    # Enforce database content types consistency
     db_type = content_item['type']
     if user['role'] == 'Profesor' and db_type != 'news':
         conn.close()
@@ -299,11 +358,7 @@ def api_admin_update_content(content_id):
             file_path = unique_filename
             
     cursor.execute(
-        """
-        UPDATE contents 
-        SET title = ?, body = ?, file_path = ?, author_id = ?, updated_at = CURRENT_TIMESTAMP 
-        WHERE id = ?
-        """,
+        "UPDATE contents SET title = ?, body = ?, file_path = ?, author_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
         (title, body, file_path, user['id'], content_id)
     )
     conn.commit()
@@ -317,11 +372,8 @@ def api_admin_update_content(content_id):
 def api_admin_delete_content(content_id):
     """Deletes content. Teachers cannot delete content."""
     user = session['user']
-    
     conn = get_db_connection()
     cursor = conn.cursor()
-    
-    # Check if content exists
     cursor.execute("SELECT id, type, title FROM contents WHERE id = ?", (content_id,))
     content_item = cursor.fetchone()
     if not content_item:
@@ -330,7 +382,6 @@ def api_admin_delete_content(content_id):
         
     db_type = content_item['type']
     title = content_item['title']
-    
     cursor.execute("DELETE FROM contents WHERE id = ?", (content_id,))
     conn.commit()
     conn.close()
@@ -343,5 +394,4 @@ def api_admin_delete_content(content_id):
 init_app_tables()
 
 if __name__ == '__main__':
-    # Start app on port 5000
     app.run(host='0.0.0.0', port=5000, debug=True)

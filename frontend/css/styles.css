@@ -252,7 +252,7 @@ nav ul li a:hover, nav ul li.active a {
     display: flex;
     align-items: center;
     background: linear-gradient(135deg, rgba(65, 100, 74, 0.9) 0%, rgba(45, 69, 51, 0.95) 100%), 
-                url('../assets/escudo.jpg') no-repeat center center;
+                url('../assets/logo-colegio.png') no-repeat center center;
     background-size: cover;
     background-attachment: fixed;
     color: var(--white);
@@ -435,12 +435,26 @@ nav ul li a:hover, nav ul li.active a {
     border-radius: var(--border-radius-lg);
     overflow: hidden;
     box-shadow: var(--shadow-lg);
+    background: linear-gradient(135deg, var(--primary-dark) 0%, #203525 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 50px 30px;
+    text-align: center;
+    min-height: 380px;
+    box-sizing: border-box;
 }
 
 .about-visual img {
-    width: 100%;
+    max-width: 65%;
+    max-height: 160px;
+    height: auto;
+    object-fit: contain;
     display: block;
+    margin-bottom: 30px;
     transition: var(--transition-smooth);
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));
 }
 
 .about-visual:hover img {
@@ -448,19 +462,26 @@ nav ul li a:hover, nav ul li.active a {
 }
 
 .about-overlay {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
-    padding: 30px;
+    position: relative;
+    width: 100%;
+    padding: 0;
     color: var(--white);
+    z-index: 2;
 }
 
 .about-overlay h4 {
     color: var(--white);
-    font-size: 1.25rem;
-    margin-bottom: 5px;
+    font-size: 1.35rem;
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-weight: 700;
+}
+
+.about-overlay p {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin: 0;
 }
 
 /* Oferta Educativa */
