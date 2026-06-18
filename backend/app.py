@@ -391,6 +391,6 @@ def api_admin_delete_content(content_id):
 
 # ----------------- MAIN APP START -----------------
 
-init_app_tables()
-
-    app.run(host='0.0.0.0', port=5000, debug=True)
+if __name__ == '__main__':
+    init_app_tables()
+    app.run(host='0.0.0.0', port=5001, debug=True)
